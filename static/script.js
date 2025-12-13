@@ -251,7 +251,8 @@ async function saveSummaryToArticle(container) {
   }
 
   try {
-    setOaiState(container, 1, 'Saving to article...', null);
+    // Don't show "Saving..." status to avoid clearing the summary content
+    // The summary is already displaying from streaming
     
     const response = await axios.post('?c=ArticleSummary&a=saveSummary', {
       id: entryId,
