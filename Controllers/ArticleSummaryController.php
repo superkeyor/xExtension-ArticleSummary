@@ -8,11 +8,11 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     // Set response header to JSON
     header('Content-Type: application/json');
 
-    $oai_url = FreshRSS_Context::$user_conf->oai_url;
-    $oai_key = FreshRSS_Context::$user_conf->oai_key;
-    $oai_model = FreshRSS_Context::$user_conf->oai_model;
-    $oai_prompt = FreshRSS_Context::$user_conf->oai_prompt;
-    $oai_provider = FreshRSS_Context::$user_conf->oai_provider;
+    $oai_url = FreshRSS_Context::$user_conf->oai_url ?? '';
+    $oai_key = FreshRSS_Context::$user_conf->oai_key ?? '';
+    $oai_model = FreshRSS_Context::$user_conf->oai_model ?? '';
+    $oai_prompt = FreshRSS_Context::$user_conf->oai_prompt ?? '';
+    $oai_provider = FreshRSS_Context::$user_conf->oai_provider ?? '';
 
     if (
       $this->isEmpty($oai_url)

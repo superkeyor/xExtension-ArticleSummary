@@ -285,10 +285,3 @@ async function saveSummaryToArticle(container) {
     setOaiState(container, 2, 'Generated but failed to save to article', null);
   }
 }
-      }, 2000);
-    }
-  } catch (error) {
-    console.error('Error saving summary:', error);
-    setOaiState(container, 2, 'Generated but failed to save to article', null);
-  }
-}
