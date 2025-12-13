@@ -75,20 +75,6 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
     content.innerHTML = summaryText.replace(/(?:\r\n|\r|\n)/g, '<br>');
     // Store the last summary text in the container for later use
     container.dataset.lastSummary = summaryText;
-    
-    // Also update all other summary containers in the same article
-    const article = container.closest('.flux_content');
-    if (article) {
-      article.querySelectorAll('.oai-summary-wrap').forEach(wrap => {
-        if (wrap !== container) {
-          const otherContent = wrap.querySelector('.oai-summary-content');
-          if (otherContent) {
-            otherContent.innerHTML = summaryText.replace(/(?:\r\n|\r|\n)/g, '<br>');
-            wrap.dataset.lastSummary = summaryText;
-          }
-        }
-      });
-    }
   }
 }
 
@@ -275,7 +261,7 @@ async function saveSummaryToArticle(container) {
           const summaryBlock = document.createElement('div');
           summaryBlock.className = 'ai-summary-block';
           summaryBlock.innerHTML = '<!-- AI_SUMMARY_START -->' +
-            '<h3>📝 AI Summary</h3>' +
+            '<h3>✨ AI Summary</h3>' +
             '<div class="ai-summary-content">' + summary + '</div>' +
             '<!-- AI_SUMMARY_END -->';
           
