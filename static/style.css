@@ -11,13 +11,11 @@
 .oai-summary-btn {
   font-size: 1.2em;
   margin-bottom: 0.5em;
-  padding: 0.5em 1em;
   cursor: pointer;
   background: #4a4a4a;
   color: #FFFFFF;
   border: 1px solid #888;
   border-radius: 5px;
-  min-width: 150px;
   display: inline-block;
 }
 
