@@ -133,7 +133,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       // Create summary HTML block using CSS classes
       $summary_html = '<div class="ai-summary-block">'
         . '<!-- AI_SUMMARY_START -->'
-        . '<h3>📝 AI Summary</h3>'
+        . '<h3>✨ AI Summary</h3>'
         . '<div class="ai-summary-content">' . $decoded_summary . '</div>'
         . '<!-- AI_SUMMARY_END -->'
         . '</div>';

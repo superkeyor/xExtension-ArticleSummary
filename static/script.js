@@ -271,14 +271,14 @@ async function saveSummaryToArticle(container) {
         const summaryBlockTop = document.createElement('div');
         summaryBlockTop.className = 'ai-summary-block';
         summaryBlockTop.innerHTML = '<!-- AI_SUMMARY_START -->' +
-          '<h3>📝 AI Summary</h3>' +
+          '<h3>✨ AI Summary</h3>' +
           '<div class="ai-summary-content">' + summary + '</div>' +
           '<!-- AI_SUMMARY_END -->';
         
         const summaryBlockBottom = document.createElement('div');
         summaryBlockBottom.className = 'ai-summary-block';
         summaryBlockBottom.innerHTML = '<!-- AI_SUMMARY_START -->' +
-          '<h3>📝 AI Summary</h3>' +
+          '<h3>✨ AI Summary</h3>' +
           '<div class="ai-summary-content">' + summary + '</div>' +
           '<!-- AI_SUMMARY_END -->';
         
