@@ -18,8 +18,9 @@ $oai_auto_feeds = FreshRSS_Context::$user_conf->oai_auto_feeds ?? '';
    </select>
  
  <div id="common_config">
-    <label for="oai_url">Base URL (http(s)://oai.com/) without 'v1'</label>
+    <label for="oai_url">Base URL (e.g., https://api.openai.com/v1)</label>
     <input type="text" name="oai_url" id="oai_url" value="<?php echo $oai_url; ?>">
+    <small>Include version in URL (e.g., /v1). Do not include /chat/completions or /api/generate</small>
     <label for="oai_key">API Key</label>
     <input type="text" name="oai_key" id="oai_key" value="<?php echo $oai_key; ?>">
     <label for="oai_model">Model Name</label>

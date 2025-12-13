@@ -42,16 +42,11 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     $content = $entry->content(); // Replace with article content
 
     // Process $oai_url
-    $oai_url = rtrim($oai_url, '/'); // Remove trailing slash
-    if (!preg_match('/\/v\d+\/?$/', $oai_url)) {
-        $oai_url .= '/v1'; // If there is no version information, add /v1
-    }
     // Open AI Input
     $successResponse = array(
       'response' => array(
         'data' => array(
-          // Determine whether the URL ends with a version. If it does, no version information is added. If not, /v1 is added by default.
-          "oai_url" => $oai_url . '/chat/completions',
+          "oai_url" => rtrim($oai_url, '/') . '/chat/completions',
           "oai_key" => $oai_key,
           "model" => $oai_model,
           "messages" => [
