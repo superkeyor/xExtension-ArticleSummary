@@ -1,9 +1,12 @@
 <?php
-$oai_url = FreshRSS_Context::$user_conf->oai_url;
+$oai_url = FreshRSS_Context::$user_conf->oai_url ?: 'https://api.openai.com/'; // Default to OpenAI URL
 $oai_key = FreshRSS_Context::$user_conf->oai_key;
-$oai_model = FreshRSS_Context::$user_conf->oai_model;
-$oai_prompt = FreshRSS_Context::$user_conf->oai_prompt;
+$oai_model = FreshRSS_Context::$user_conf->oai_model ?: 'gpt-5-nano';
+$oai_prompt = FreshRSS_Context::$user_conf->oai_prompt ?: '简短摘要，保持原语言:';
 $oai_provider = FreshRSS_Context::$user_conf->oai_provider ?: 'openai'; // Default to OpenAI
+$oai_auto_enabled = FreshRSS_Context::$user_conf->oai_auto_enabled ?? '';
+$oai_auto_min_time = FreshRSS_Context::$user_conf->oai_auto_min_time ?? '5';
+$oai_auto_feeds = FreshRSS_Context::$user_conf->oai_auto_feeds ?? '';
 ?>
 
 <form action="<?php echo _url('extension', 'configure', 'e', urlencode($this->getName())); ?>" method="post">
@@ -24,6 +27,19 @@ $oai_provider = FreshRSS_Context::$user_conf->oai_provider ?: 'openai'; // Defau
     <label for="oai_prompt">Prompt (add before content)</label>
     <textarea name="oai_prompt" id="oai_prompt"><?php echo $oai_prompt; ?></textarea>
   </div>
+  <hr />
+  <h3>Auto-Generation Settings</h3>
+  <label for="oai_auto_enabled">
+    <input type="checkbox" name="oai_auto_enabled" id="oai_auto_enabled" value="1" <?php echo ($oai_auto_enabled == '1' ? 'checked' : ''); ?>>
+    Enable auto-generation for long articles
+  </label>
+  <label for="oai_auto_min_time">Minimum reading time (minutes)</label>
+  <input type="number" name="oai_auto_min_time" id="oai_auto_min_time" value="<?php echo $oai_auto_min_time; ?>" min="1" max="60">
+  <small>Only generate summaries for articles with reading time ≥ this value</small>
+  
+  <label for="oai_auto_feeds">Feed IDs (comma-separated, leave empty for all feeds)</label>
+  <input type="text" name="oai_auto_feeds" id="oai_auto_feeds" value="<?php echo $oai_auto_feeds; ?>" placeholder="e.g., 123,456,789">
+  <small>Get feed ID from the feed URL: ?get=f_<strong>123</strong></small>
   <hr />
   <button type="submit">Save</button>
 </form>
