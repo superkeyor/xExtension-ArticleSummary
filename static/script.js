@@ -50,6 +50,10 @@ function configureSummarizeButtons() {
 function setOaiState(container, statusType, statusMsg, summaryText) {
   const button = container.querySelector('.oai-summary-btn');
   const content = container.querySelector('.oai-summary-content');
+  
+  console.log('setOaiState called for container:', container);
+  console.log('Status type:', statusType, 'Message:', statusMsg);
+  
   // 根据 state 设置不同的状态
   if (statusType === 1) {
     container.classList.add('oai-loading');
@@ -80,6 +84,9 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
 
 async function summarizeButtonClick(target) {
   var container = target.parentNode;
+  console.log('Button clicked, container:', container);
+  console.log('Container classes:', container.className);
+  
   if (container.classList.contains('oai-loading')) {
     return;
   }
