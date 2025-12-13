@@ -127,16 +127,19 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
         return;
       }
 
+      // Decode HTML entities if they exist in the summary
+      $decoded_summary = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+      
       // Create summary HTML block using CSS classes
       $summary_html = '<div class="ai-summary-block">'
         . '<!-- AI_SUMMARY_START -->'
         . '<h3>📝 AI Summary</h3>'
-        . '<div class="ai-summary-content">' . $summary . '</div>'
+        . '<div class="ai-summary-content">' . $decoded_summary . '</div>'
         . '<!-- AI_SUMMARY_END -->'
         . '</div>';
 
-      // Prepend summary to content
-      $new_content = $summary_html . $current_content;
+      // Add summary at both top and bottom of content
+      $new_content = $summary_html . $current_content . '<div>&nbsp;</div>' . $summary_html;
 
       // Update entry content
       $entry->_content($new_content);
