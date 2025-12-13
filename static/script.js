@@ -1,3 +1,26 @@
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // Start with 1 second
+
+// Helper function for delay
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// New retry helper function with exponential backoff
+async function retryWithBackoff(fn, retries = MAX_RETRIES) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      
+      const delay = INITIAL_RETRY_DELAY * Math.pow(2, i);
+      console.log(`Attempt ${i + 1} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 if (document.readyState && document.readyState !== 'loading') {
   configureSummarizeButtons();
 } else {
@@ -9,7 +32,7 @@ function configureSummarizeButtons() {
     for (var target = e.target; target && target != this; target = target.parentNode) {
       
       if (target.matches('.flux_header')) {
-        target.nextElementSibling.querySelector('.oai-summary-btn').innerHTML = 'Summarize'
+        target.nextElementSibling.querySelectorAll('.oai-summary-btn').forEach(btn => btn.innerHTML = '✨Summarize');
       }
 
       if (target.matches('.oai-summary-btn')) {
@@ -27,7 +50,7 @@ function configureSummarizeButtons() {
 function setOaiState(container, statusType, statusMsg, summaryText) {
   const button = container.querySelector('.oai-summary-btn');
   const content = container.querySelector('.oai-summary-content');
-  // Set different states based on statusType
+  // 根据 state 设置不同的状态
   if (statusType === 1) {
     container.classList.add('oai-loading');
     container.classList.remove('oai-error');
@@ -50,6 +73,8 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
   
   if (summaryText) {
     content.innerHTML = summaryText.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    // Store the last summary text in the container for later use
+    container.dataset.lastSummary = summaryText;
   }
 }
 
@@ -61,7 +86,7 @@ async function summarizeButtonClick(target) {
 
   setOaiState(container, 1, 'Loading...', null);
 
-  // This is the address where PHP gets the parameters
+  // 这是 php 获取参数的地址 - This is the address where PHP gets the parameters
   var url = target.dataset.request;
   var data = {
     ajax: true,
@@ -69,10 +94,16 @@ async function summarizeButtonClick(target) {
   };
 
   try {
-    const response = await axios.post(url, data, {
-      headers: {
-        'Content-Type': 'application/json'
+    const response = await retryWithBackoff(async () => {
+      const response = await axios.post(url, data, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.data?.response?.data) {
+        throw new Error('Invalid response structure');
       }
+      return response;
     });
 
     const xresp = response.data;
@@ -85,7 +116,7 @@ async function summarizeButtonClick(target) {
     if (xresp.response.error) {
       setOaiState(container, 2, xresp.response.data, null);
     } else {
-      // Parse parameters returned by PHP
+      // 解析 PHP 返回的参数
       const oaiParams = xresp.response.data;
       const oaiProvider = xresp.response.provider;
       if (oaiProvider === 'openai') {
@@ -125,11 +156,13 @@ async function sendOpenAIRequest(container, oaiParams) {
       const { done, value } = await reader.read();
       if (done) {
         setOaiState(container, 0, 'finish', null);
+        // After completion, save summary to article
+        await saveSummaryToArticle(container);
         break;
       }
 
       const chunk = decoder.decode(value, { stream: true });
-      const text = JSON.parse(chunk)?.choices[0]?.message?.content || ''
+      const text = JSON.parse(chunk)?.choices[0]?.message?.content || '';
       setOaiState(container, 0, null, marked.parse(text));
     }
   } catch (error) {
@@ -153,7 +186,7 @@ async function sendOllamaRequest(container, oaiParams){
     if (!response.ok) {
       throw new Error('Request Failed');
     }
-
+  
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let text = '';
@@ -163,6 +196,8 @@ async function sendOllamaRequest(container, oaiParams){
       const { done, value } = await reader.read();
       if (done) {
         setOaiState(container, 0, 'finish', null);
+        // After completion, save summary to article
+        await saveSummaryToArticle(container);
         break;
       }
       buffer += decoder.decode(value, { stream: true });
@@ -187,5 +222,56 @@ async function sendOllamaRequest(container, oaiParams){
   } catch (error) {
     console.error(error);
     setOaiState(container, 2, 'Request Failed', null);
+  }
+}
+
+async function saveSummaryToArticle(container) {
+  const button = container.querySelector('.oai-summary-btn');
+  const entryId = button.dataset.entryId;
+  const summary = container.dataset.lastSummary;
+
+  if (!entryId || !summary) {
+    console.error('Missing entry ID or summary');
+    return;
+  }
+
+  try {
+    setOaiState(container, 1, 'Saving to article...', null);
+    
+    const response = await axios.post('?c=ArticleSummary&a=saveSummary', {
+      id: entryId,
+      summary: summary,
+      ajax: true,
+      _csrf: context.csrf
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.data.status === 200 && response.data.inserted) {
+      setOaiState(container, 0, 'Summary saved to article! Refreshing...', null);
+      
+      // Find and hide all button containers for this article
+      const article = container.closest('.flux_content');
+      if (article) {
+        article.querySelectorAll('.oai-summary-wrap').forEach(wrap => {
+          wrap.style.display = 'none';
+        });
+      }
+      
+      // Reload the article to show the updated content
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+    } else {
+      setOaiState(container, 0, 'Summary generated (already in article)', null);
+      setTimeout(() => {
+        button.disabled = false;
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Error saving summary:', error);
+    setOaiState(container, 2, 'Generated but failed to save to article', null);
   }
 }

@@ -1,15 +1,13 @@
 <?php
 class ArticleSummaryExtension extends Minz_Extension
 {
-
-
   protected array $csp_policies = [
     'default-src' => '*',
   ];
 
   public function init()
   {
-    $this->registerHook('entry_before_display', array($this, 'addSummaryButton'));
+    $this->registerHook('entry_before_display', array($this, 'addSummaryButtons'));
     $this->registerController('ArticleSummary');
     Minz_View::appendStyle($this->getFileUrl('style.css', 'css'));
     Minz_View::appendScript($this->getFileUrl('axios.js', 'js'));
@@ -17,7 +15,7 @@ class ArticleSummaryExtension extends Minz_Extension
     Minz_View::appendScript($this->getFileUrl('script.js', 'js'));
   }
 
-  public function addSummaryButton($entry)
+  public function addSummaryButtons($entry)
   {
     $url_summary = Minz_Url::display(array(
       'c' => 'ArticleSummary',
@@ -26,14 +24,33 @@ class ArticleSummaryExtension extends Minz_Extension
         'id' => $entry->id()
       )
     ));
-
-    $entry->_content(
-      '<div class="oai-summary-wrap">'
-      . '<button data-request="' . $url_summary . '" class="oai-summary-btn"></button>'
+    
+    // Check if summary already exists in content
+    if (strpos($entry->content(), '<!-- AI_SUMMARY_START -->') !== false) {
+      // Summary already exists, don't add buttons
+      return $entry;
+    }
+    
+    // Create top button and content div
+    $topButton = '<div class="oai-summary-wrap">'
+      . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn"></button>'
       . '<div class="oai-summary-content"></div>'
-      . '</div>'
+      . '</div>';
+    
+    // Create spacer and bottom button
+    $bottomButton = '<div>&nbsp;</div>'
+      . '<div class="oai-summary-wrap">'
+      . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn"></button>'
+      . '<div class="oai-summary-content"></div>'
+      . '</div>';
+    
+    // Add both buttons to the content
+    $entry->_content(
+      $topButton
       . $entry->content()
+      . $bottomButton
     );
+    
     return $entry;
   }
 

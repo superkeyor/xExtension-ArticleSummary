@@ -1,6 +1,8 @@
 .oai-summary-wrap {
   
-  background: #f8f8f8;
+  background: #6D6D6D; /* Medium gray background */
+  color: #FFFFFF; /* White font color for contrast */
+  border-radius: 10px; /* Rounded corners */
   padding: 1em;
   margin-bottom: 2em;
   border: 1px solid #888;

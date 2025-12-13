@@ -64,8 +64,8 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
               "content" => "input: \n" . $this->htmlToMarkdown($content),
             ]
           ],
-          "max_tokens" => 2048, // You can adjust the length of the summary as needed
-          "temperature" => 0.7, // You can adjust the randomness/temperature of the generated text as needed
+          "max_completion_tokens" => 2048, // You can adjust the length of the summary as needed
+          "temperature" => 1, // You can adjust the randomness/temperature of the generated text as needed
           "n" => 1 // Generate summary
         ),
         'provider' => 'openai',
@@ -93,6 +93,63 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       );
     }
     echo json_encode($successResponse);
+    return;
+  }
+
+  public function saveSummaryAction()
+  {
+    $this->view->_layout(false);
+    header('Content-Type: application/json');
+
+    $entry_id = Minz_Request::param('id');
+    $summary = Minz_Request::param('summary');
+
+    if (!$entry_id || !$summary) {
+      echo json_encode(array('status' => 400, 'error' => 'Missing parameters'));
+      return;
+    }
+
+    try {
+      $entry_dao = FreshRSS_Factory::createEntryDao();
+      $entry = $entry_dao->searchById($entry_id);
+
+      if ($entry === null) {
+        echo json_encode(array('status' => 404, 'error' => 'Entry not found'));
+        return;
+      }
+
+      // Get current content
+      $current_content = $entry->content();
+      
+      // Check if summary already exists
+      if (strpos($current_content, '<!-- AI_SUMMARY_START -->') !== false) {
+        echo json_encode(array('status' => 200, 'message' => 'Summary already exists'));
+        return;
+      }
+
+      // Create summary HTML block
+      $summary_html = '<div class="ai-summary-block" style="background-color: #f0f8ff; border-left: 4px solid #4682b4; padding: 15px; margin: 20px 0; border-radius: 4px;">'
+        . '<!-- AI_SUMMARY_START -->'
+        . '<h3 style="margin-top: 0; color: #4682b4; font-size: 1.2em;">📝 AI Summary</h3>'
+        . '<div class="ai-summary-content">' . $summary . '</div>'
+        . '<!-- AI_SUMMARY_END -->'
+        . '</div>';
+
+      // Prepend summary to content
+      $new_content = $summary_html . $current_content;
+
+      // Update entry content
+      $entry->_content($new_content);
+      $entry_dao->updateEntry($entry->toArray());
+
+      echo json_encode(array(
+        'status' => 200, 
+        'message' => 'Summary saved successfully',
+        'inserted' => true
+      ));
+    } catch (Exception $e) {
+      echo json_encode(array('status' => 500, 'error' => $e->getMessage()));
+    }
     return;
   }
 
