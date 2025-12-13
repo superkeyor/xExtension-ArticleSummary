@@ -138,8 +138,8 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
         . '<!-- AI_SUMMARY_END -->'
         . '</div>';
 
-      // Add summary at both top and bottom of content
-      $new_content = $summary_html . $current_content . '<div>&nbsp;</div>' . $summary_html;
+      // Add summary only at top of content
+      $new_content = $summary_html . $current_content;
 
       // Update entry content
       $entry->_content($new_content);

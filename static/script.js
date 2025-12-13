@@ -265,27 +265,29 @@ async function saveSummaryToArticle(container) {
     });
 
     if (response.data.status === 200 && response.data.inserted) {
-      // Find the article content container
+      // Summary is already showing from streaming, just clean up the UI
+      
+      // Hide the button in the current container (summary is already displayed)
+      const button = container.querySelector('.oai-summary-btn');
+      if (button) {
+        button.style.display = 'none';
+      }
+      
+      // Remove other button containers (the one that wasn't clicked)
       const article = container.closest('.flux_content');
       if (article) {
-        // Find all button containers in this article
-        const buttonContainers = article.querySelectorAll('.oai-summary-wrap');
-        
-        // Replace each button container with a summary block
-        buttonContainers.forEach(wrap => {
-          const summaryBlock = document.createElement('div');
-          summaryBlock.className = 'ai-summary-block';
-          summaryBlock.innerHTML = '<!-- AI_SUMMARY_START -->' +
-            '<h3>✨ AI Summary</h3>' +
-            '<div class="ai-summary-content">' + summary + '</div>' +
-            '<!-- AI_SUMMARY_END -->';
-          
-          // Replace the button container with the summary block
-          wrap.parentNode.replaceChild(summaryBlock, wrap);
+        article.querySelectorAll('.oai-summary-wrap').forEach(wrap => {
+          if (wrap !== container) {
+            wrap.remove();
+          }
         });
       }
       
-      setOaiState(container, 0, 'Summary saved!', null);
+      // Optional: add a small "saved" indicator
+      const content = container.querySelector('.oai-summary-content');
+      if (content && !content.dataset.saved) {
+        content.dataset.saved = 'true';
+      }
     } else {
       setOaiState(container, 0, 'Summary generated (already in article)', null);
       setTimeout(() => {
