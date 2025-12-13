@@ -91,6 +91,14 @@ async function summarizeButtonClick(target) {
     return;
   }
 
+  // Hide any existing saved summaries in the article during regeneration
+  const article = container.closest('.flux_content');
+  if (article) {
+    article.querySelectorAll('.ai-summary-block').forEach(block => {
+      block.style.display = 'none';
+    });
+  }
+
   setOaiState(container, 1, 'Loading...', null);
 
   // 这是 php 获取参数的地址 - This is the address where PHP gets the parameters
