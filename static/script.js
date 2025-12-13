@@ -267,37 +267,20 @@ async function saveSummaryToArticle(container) {
       // Find the article content container
       const article = container.closest('.flux_content');
       if (article) {
-        // Create the saved summary blocks to insert into the article
-        const summaryBlockTop = document.createElement('div');
-        summaryBlockTop.className = 'ai-summary-block';
-        summaryBlockTop.innerHTML = '<!-- AI_SUMMARY_START -->' +
-          '<h3>✨ AI Summary</h3>' +
-          '<div class="ai-summary-content">' + summary + '</div>' +
-          '<!-- AI_SUMMARY_END -->';
+        // Find all button containers in this article
+        const buttonContainers = article.querySelectorAll('.oai-summary-wrap');
         
-        const summaryBlockBottom = document.createElement('div');
-        summaryBlockBottom.className = 'ai-summary-block';
-        summaryBlockBottom.innerHTML = '<!-- AI_SUMMARY_START -->' +
-          '<h3>✨ AI Summary</h3>' +
-          '<div class="ai-summary-content">' + summary + '</div>' +
-          '<!-- AI_SUMMARY_END -->';
-        
-        // Find the content element to add summary to top and bottom
-        const contentElement = article.querySelector('.content');
-        if (contentElement) {
-          // Add summary at top
-          contentElement.insertBefore(summaryBlockTop, contentElement.firstChild);
+        // Replace each button container with a summary block
+        buttonContainers.forEach(wrap => {
+          const summaryBlock = document.createElement('div');
+          summaryBlock.className = 'ai-summary-block';
+          summaryBlock.innerHTML = '<!-- AI_SUMMARY_START -->' +
+            '<h3>📝 AI Summary</h3>' +
+            '<div class="ai-summary-content">' + summary + '</div>' +
+            '<!-- AI_SUMMARY_END -->';
           
-          // Add spacer and summary at bottom
-          const spacer = document.createElement('div');
-          spacer.innerHTML = '&nbsp;';
-          contentElement.appendChild(spacer);
-          contentElement.appendChild(summaryBlockBottom);
-        }
-        
-        // Hide all button containers for this article
-        article.querySelectorAll('.oai-summary-wrap').forEach(wrap => {
-          wrap.style.display = 'none';
+          // Replace the button container with the summary block
+          wrap.parentNode.replaceChild(summaryBlock, wrap);
         });
       }
       
