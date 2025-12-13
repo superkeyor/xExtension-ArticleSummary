@@ -127,10 +127,10 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
         return;
       }
 
-      // Create summary HTML block
-      $summary_html = '<div class="ai-summary-block" style="background-color: #f0f8ff; border-left: 4px solid #4682b4; padding: 15px; margin: 20px 0; border-radius: 4px;">'
+      // Create summary HTML block using CSS classes
+      $summary_html = '<div class="ai-summary-block">'
         . '<!-- AI_SUMMARY_START -->'
-        . '<h3 style="margin-top: 0; color: #4682b4; font-size: 1.2em;">📝 AI Summary</h3>'
+        . '<h3>📝 AI Summary</h3>'
         . '<div class="ai-summary-content">' . $summary . '</div>'
         . '<!-- AI_SUMMARY_END -->'
         . '</div>';

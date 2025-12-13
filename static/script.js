@@ -250,24 +250,41 @@ async function saveSummaryToArticle(container) {
     });
 
     if (response.data.status === 200 && response.data.inserted) {
-      setOaiState(container, 0, 'Summary saved to article! Refreshing...', null);
-      
-      // Find and hide all button containers for this article
+      // Find the article content container
       const article = container.closest('.flux_content');
       if (article) {
+        // Create the saved summary block to insert into the article
+        const summaryBlock = document.createElement('div');
+        summaryBlock.className = 'ai-summary-block';
+        summaryBlock.innerHTML = '<!-- AI_SUMMARY_START -->' +
+          '<h3>📝 AI Summary</h3>' +
+          '<div class="ai-summary-content">' + summary + '</div>' +
+          '<!-- AI_SUMMARY_END -->';
+        
+        // Find the content element to prepend summary to
+        const contentElement = article.querySelector('.content');
+        if (contentElement) {
+          contentElement.insertBefore(summaryBlock, contentElement.firstChild);
+        }
+        
+        // Hide all button containers for this article
         article.querySelectorAll('.oai-summary-wrap').forEach(wrap => {
           wrap.style.display = 'none';
         });
       }
       
-      // Reload the article to show the updated content
-      setTimeout(() => {
-        location.reload();
-      }, 1500);
+      setOaiState(container, 0, 'Summary saved!', null);
     } else {
       setOaiState(container, 0, 'Summary generated (already in article)', null);
       setTimeout(() => {
         button.disabled = false;
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Error saving summary:', error);
+    setOaiState(container, 2, 'Generated but failed to save to article', null);
+  }
+}
       }, 2000);
     }
   } catch (error) {
