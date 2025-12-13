@@ -166,7 +166,12 @@ class ArticleSummaryExtension extends Minz_Extension
 
     // Prepare API request
     if ($oai_provider === 'openai') {
-      $url = rtrim($oai_url, '/') . '/chat/completions';
+      // Ensure URL has /v1 if not already present (OpenAI API requirement)
+      $base_url = rtrim($oai_url, '/');
+      if (!preg_match('#/v\d+$#', $base_url)) {
+        $base_url .= '/v1';
+      }
+      $url = $base_url . '/chat/completions';
       $data = [
         'model' => $oai_model,
         'messages' => [
