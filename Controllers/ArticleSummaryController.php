@@ -4,9 +4,9 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
 {
   public function summarizeAction()
   {
+    $this->view->_layout(false);
     // Set response header to JSON first, before any output
     header('Content-Type: application/json');
-    $this->view->_layout(false);
 
     $oai_url = FreshRSS_Context::$user_conf->oai_url ?? '';
     $oai_key = FreshRSS_Context::$user_conf->oai_key ?? '';
@@ -27,7 +27,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
         ),
         'status' => 200
       ));
-      return;
+      exit;
     }
 
     $entry_id = Minz_Request::param('id');
@@ -36,7 +36,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
 
     if ($entry === null) {
       echo json_encode(array('status' => 404));
-      return;
+      exit;
     }
 
     $content = $entry->content(); // Replace with article content
@@ -88,21 +88,21 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       );
     }
     echo json_encode($successResponse);
-    return;
+    exit;
   }
 
   public function saveSummaryAction()
   {
+    $this->view->_layout(false);
     // Set response header to JSON first, before any output
     header('Content-Type: application/json');
-    $this->view->_layout(false);
 
     $entry_id = Minz_Request::param('id');
     $summary = Minz_Request::param('summary');
 
     if (!$entry_id || !$summary) {
       echo json_encode(array('status' => 400, 'error' => 'Missing parameters'));
-      return;
+      exit;
     }
 
     try {
@@ -111,7 +111,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
 
       if ($entry === null) {
         echo json_encode(array('status' => 404, 'error' => 'Entry not found'));
-        return;
+        exit;
       }
 
       // Get current content
@@ -120,7 +120,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       // Check if summary already exists
       if (strpos($current_content, '<!-- AI_SUMMARY_START -->') !== false) {
         echo json_encode(array('status' => 200, 'message' => 'Summary already exists'));
-        return;
+        exit;
       }
 
       // Decode HTML entities if they exist in the summary
@@ -149,7 +149,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     } catch (Exception $e) {
       echo json_encode(array('status' => 500, 'error' => $e->getMessage()));
     }
-    return;
+    exit;
   }
 
   private function isEmpty($item)
