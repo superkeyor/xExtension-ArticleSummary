@@ -89,6 +89,9 @@ class ArticleSummaryExtension extends Minz_Extension
       $feeds = $feedDAO->listFeeds();
 
       $totalProcessed = 0;
+      $totalSkipped = 0;
+      $skipReasons = [];
+      
       foreach ($feeds as $feed) {
         // Check if this feed is in the allowed list
         if (!empty($allowed_feeds) && !in_array($feed->id(), $allowed_feeds)) {
@@ -99,18 +102,26 @@ class ArticleSummaryExtension extends Minz_Extension
         $entries = iterator_to_array(
           $entryDAO->listWhere('f', $feed->id(), FreshRSS_Entry::STATE_NOT_READ, order: 'DESC', limit: 50)
         );
+        
+        Minz_Log::notice('ArticleSummary: Checking feed ' . $feed->id() . ' (' . $feed->name() . '), found ' . count($entries) . ' unread articles');
 
         foreach ($entries as $entry) {
           // Skip if summary already exists
           if (strpos($entry->content(), '<!-- AI_SUMMARY_START -->') !== false) {
+            $totalSkipped++;
+            $skipReasons[] = 'Entry ' . $entry->id() . ': Summary already exists';
             continue;
           }
 
           // Calculate reading time
           $reading_time = $this->calculateReadingTime($entry->content());
           if ($reading_time < $min_reading_time) {
+            $totalSkipped++;
+            $skipReasons[] = 'Entry ' . $entry->id() . ': Reading time ' . $reading_time . ' min < ' . $min_reading_time . ' min';
             continue;
           }
+          
+          Minz_Log::notice('ArticleSummary: Processing entry ' . $entry->id() . ' (reading time: ' . $reading_time . ' min)');
 
           // Generate summary
           try {
@@ -148,7 +159,16 @@ class ArticleSummaryExtension extends Minz_Extension
 
       if ($totalProcessed > 0) {
         Minz_Log::notice('ArticleSummary: Auto-generated ' . $totalProcessed . ' summaries');
-      } else {
+      }
+      
+      if ($totalSkipped > 0) {
+        Minz_Log::notice('ArticleSummary: Skipped ' . $totalSkipped . ' articles:');
+        foreach ($skipReasons as $reason) {
+          Minz_Log::notice('  - ' . $reason);
+        }
+      }
+      
+      if ($totalProcessed === 0 && $totalSkipped === 0) {
         Minz_Log::notice('ArticleSummary: No articles needed summarization (checked ' . count($feeds) . ' feeds)');
       }
 
