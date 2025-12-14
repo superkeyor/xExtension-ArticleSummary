@@ -139,8 +139,8 @@ class ArticleSummaryExtension extends Minz_Extension
             // Continue with next article
           }
 
-          // Limit processing to prevent timeouts (max 10 articles per maintenance run)
-          if ($totalProcessed >= 10) {
+          // Limit processing to prevent timeouts (max n articles per maintenance run)
+          if ($totalProcessed >= 100) {
             break 2;
           }
         }
