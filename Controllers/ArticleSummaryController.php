@@ -4,9 +4,9 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
 {
   public function summarizeAction()
   {
-    $this->view->_layout(false);
-    // Set response header to JSON
+    // Set response header to JSON first, before any output
     header('Content-Type: application/json');
+    $this->view->_layout(false);
 
     $oai_url = FreshRSS_Context::$user_conf->oai_url ?? '';
     $oai_key = FreshRSS_Context::$user_conf->oai_key ?? '';
@@ -93,8 +93,9 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
 
   public function saveSummaryAction()
   {
-    $this->view->_layout(false);
+    // Set response header to JSON first, before any output
     header('Content-Type: application/json');
+    $this->view->_layout(false);
 
     $entry_id = Minz_Request::param('id');
     $summary = Minz_Request::param('summary');
