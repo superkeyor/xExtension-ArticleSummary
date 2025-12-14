@@ -117,13 +117,11 @@ class ArticleSummaryExtension extends Minz_Extension
             $summary = $this->generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider);
             
             if ($summary) {
-              // Decode HTML entities if they exist
-              $decoded_summary = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-              
+              // Save raw summary (will be parsed by marked.js on frontend display)
               $summary_html = '<div class="ai-summary-block">'
                 . '<!-- AI_SUMMARY_START -->'
                 . '<h3>✨ AI Summary</h3>'
-                . '<div class="ai-summary-content">' . $decoded_summary . '</div>'
+                . '<div class="ai-summary-content">' . $summary . '</div>'
                 . '<!-- AI_SUMMARY_END -->'
                 . '</div>';
               
@@ -150,6 +148,8 @@ class ArticleSummaryExtension extends Minz_Extension
 
       if ($totalProcessed > 0) {
         Minz_Log::notice('ArticleSummary: Auto-generated ' . $totalProcessed . ' summaries');
+      } else {
+        Minz_Log::notice('ArticleSummary: No articles needed summarization (checked ' . count($feeds) . ' feeds)');
       }
 
     } catch (Exception $e) {
@@ -159,10 +159,8 @@ class ArticleSummaryExtension extends Minz_Extension
 
   private function generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider)
   {
-    // Get article content as text
-    $content = strip_tags($entry->content());
-    $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $content = trim(preg_replace('/\s+/', ' ', $content));
+    // Use htmlToMarkdown to convert article content (same as manual processing)
+    $content = $this->htmlToMarkdown($entry->content());
 
     // Prepare API request
     if ($oai_provider === 'openai') {
@@ -246,6 +244,133 @@ class ArticleSummaryExtension extends Minz_Extension
     // Calculate reading time (300 words per minute)
     $reading_time = round($wordCount / 300);
     return $reading_time;
+  }
+
+  private function htmlToMarkdown($content)
+  {
+    // Reused from ArticleSummaryController - converts HTML to markdown for API input
+    $dom = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $dom->loadHTML('<?xml encoding="UTF-8">' . $content);
+    libxml_clear_errors();
+
+    $xpath = new DOMXPath($dom);
+
+    $processNode = function ($node, $indentLevel = 0) use (&$processNode, $xpath) {
+      $markdown = '';
+
+      if ($node->nodeType === XML_TEXT_NODE) {
+        $markdown .= trim($node->nodeValue);
+      }
+
+      if ($node->nodeType === XML_ELEMENT_NODE) {
+        switch ($node->nodeName) {
+          case 'p':
+          case 'div':
+            foreach ($node->childNodes as $child) {
+              $markdown .= $processNode($child);
+            }
+            $markdown .= "\n\n";
+            break;
+          case 'h1':
+            $markdown .= "# ";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "\n\n";
+            break;
+          case 'h2':
+            $markdown .= "## ";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "\n\n";
+            break;
+          case 'h3':
+            $markdown .= "### ";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "\n\n";
+            break;
+          case 'h4':
+            $markdown .= "#### ";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "\n\n";
+            break;
+          case 'h5':
+            $markdown .= "##### ";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "\n\n";
+            break;
+          case 'h6':
+            $markdown .= "###### ";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "\n\n";
+            break;
+          case 'a':
+            $markdown .= "`";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "`";
+            break;
+          case 'img':
+            $alt = $node->getAttribute('alt');
+            $markdown .= "img: `" . $alt . "`";
+            break;
+          case 'strong':
+          case 'b':
+            $markdown .= "**";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "**";
+            break;
+          case 'em':
+          case 'i':
+            $markdown .= "*";
+            $markdown .= $processNode($node->firstChild);
+            $markdown .= "*";
+            break;
+          case 'ul':
+          case 'ol':
+            $markdown .= "\n";
+            foreach ($node->childNodes as $child) {
+              if ($child->nodeName === 'li') {
+                $markdown .= str_repeat("  ", $indentLevel) . "- ";
+                $markdown .= $processNode($child, $indentLevel + 1);
+                $markdown .= "\n";
+              }
+            }
+            $markdown .= "\n";
+            break;
+          case 'li':
+            $markdown .= str_repeat("  ", $indentLevel) . "- ";
+            foreach ($node->childNodes as $child) {
+              $markdown .= $processNode($child, $indentLevel + 1);
+            }
+            $markdown .= "\n";
+            break;
+          case 'br':
+            $markdown .= "\n";
+            break;
+          case 'audio':
+          case 'video':
+            $alt = $node->getAttribute('alt');
+            $markdown .= "[" . ($alt ? $alt : 'Media') . "]";
+            break;
+          default:
+            foreach ($node->childNodes as $child) {
+              $markdown .= $processNode($child);
+            }
+            break;
+        }
+      }
+
+      return $markdown;
+    };
+
+    $nodes = $xpath->query('//body/*');
+
+    $markdown = '';
+    foreach ($nodes as $node) {
+      $markdown .= $processNode($node);
+    }
+
+    $markdown = preg_replace('/(\n){3,}/', "\n\n", $markdown);
+    
+    return $markdown;
   }
 
   public function handleConfigureAction()
