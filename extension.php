@@ -102,7 +102,7 @@ class ArticleSummaryExtension extends Minz_Extension
         // Get unread articles for this feed (limit to x per feed per run)
         $entries = iterator_to_array(
           // $entryDAO->listWhere('f', $feed->id(), FreshRSS_Entry::STATE_NOT_READ, order: 'DESC', limit: 50)
-          $entryDAO->listWhere('f', $feed->id(), FreshRSS_Entry::STATE_NOT_READ, order: 'DESC')
+          $entryDAO->listWhere('f', $feed->id(), FreshRSS_Entry::STATE_NOT_READ, order: 'DESC', limit: -1)  // no limit
         );
         
         Minz_Log::notice('ArticleSummary: Checking feed ' . $feed->id() . ' (' . $feed->name() . '), found ' . count($entries) . ' unread articles');
