@@ -4,7 +4,7 @@ $oai_key = FreshRSS_Context::$user_conf->oai_key;
 $oai_model = FreshRSS_Context::$user_conf->oai_model ?: 'gpt-5-nano';
 $oai_prompt = FreshRSS_Context::$user_conf->oai_prompt ?: '简短摘要，保持原语言:';
 $oai_provider = FreshRSS_Context::$user_conf->oai_provider ?: 'openai'; // Default to OpenAI
-$oai_max_tokens = FreshRSS_Context::$user_conf->oai_max_tokens ?: '2048';
+$oai_max_tokens = FreshRSS_Context::$user_conf->oai_max_tokens ?: '4096';
 $oai_auto_enabled = FreshRSS_Context::$user_conf->oai_auto_enabled ?? '';
 $oai_auto_min_time = FreshRSS_Context::$user_conf->oai_auto_min_time ?? '5';
 $oai_auto_feeds = FreshRSS_Context::$user_conf->oai_auto_feeds ?? '';
@@ -30,7 +30,7 @@ $oai_auto_feeds = FreshRSS_Context::$user_conf->oai_auto_feeds ?? '';
     <textarea name="oai_prompt" id="oai_prompt"><?php echo $oai_prompt; ?></textarea>
     <label for="oai_max_tokens">Max Completion Tokens</label>
     <input type="number" name="oai_max_tokens" id="oai_max_tokens" value="<?php echo $oai_max_tokens; ?>" min="100" max="128000">
-    <small>Maximum length of generated summary (default: 2048, GPT-5 nano supports up to 128,000)</small>
+    <small>Maximum length of generated summary (default: 4096, GPT-5 nano supports up to 128,000)</small>
   </div>
   <hr />
   <h3>Auto-Generation Settings</h3>

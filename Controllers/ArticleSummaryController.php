@@ -13,7 +13,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     $oai_model = FreshRSS_Context::$user_conf->oai_model ?? '';
     $oai_prompt = FreshRSS_Context::$user_conf->oai_prompt ?? '';
     $oai_provider = FreshRSS_Context::$user_conf->oai_provider ?? '';
-    $oai_max_tokens = (int)(FreshRSS_Context::$user_conf->oai_max_tokens ?? '2048');
+    $oai_max_tokens = (int)(FreshRSS_Context::$user_conf->oai_max_tokens ?? '4096');
 
     if (
       $this->isEmpty($oai_url)
