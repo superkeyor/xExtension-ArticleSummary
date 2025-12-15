@@ -70,6 +70,7 @@ class ArticleSummaryExtension extends Minz_Extension
       $oai_model = FreshRSS_Context::$user_conf->oai_model ?? '';
       $oai_prompt = FreshRSS_Context::$user_conf->oai_prompt ?? '';
       $oai_provider = FreshRSS_Context::$user_conf->oai_provider ?? 'openai';
+      $oai_max_tokens = (int)(FreshRSS_Context::$user_conf->oai_max_tokens ?? '2048');
 
       // Skip if API not configured
       if (empty($oai_url) || empty($oai_key) || empty($oai_model)) {
@@ -125,7 +126,7 @@ class ArticleSummaryExtension extends Minz_Extension
 
           // Generate summary
           try {
-            $summary = $this->generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider);
+            $summary = $this->generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens);
             
             if ($summary) {
               // Save raw summary (will be parsed by marked.js on frontend display)
@@ -177,7 +178,7 @@ class ArticleSummaryExtension extends Minz_Extension
     }
   }
 
-  private function generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider)
+  private function generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens = 2048)
   {
     // Use htmlToMarkdown to convert article content (same as manual processing)
     $content = $this->htmlToMarkdown($entry->content());
@@ -191,7 +192,7 @@ class ArticleSummaryExtension extends Minz_Extension
           ['role' => 'system', 'content' => $oai_prompt],
           ['role' => 'user', 'content' => 'input: \n' . $content]
         ],
-        'max_completion_tokens' => 2048,
+        'max_completion_tokens' => $oai_max_tokens,
         'temperature' => 1,
         'stream' => false
       ];
@@ -401,6 +402,7 @@ class ArticleSummaryExtension extends Minz_Extension
       FreshRSS_Context::$user_conf->oai_model = Minz_Request::param('oai_model', '');
       FreshRSS_Context::$user_conf->oai_prompt = Minz_Request::param('oai_prompt', '');
       FreshRSS_Context::$user_conf->oai_provider = Minz_Request::param('oai_provider', '');
+      FreshRSS_Context::$user_conf->oai_max_tokens = Minz_Request::param('oai_max_tokens', '2048');
       FreshRSS_Context::$user_conf->oai_auto_enabled = Minz_Request::param('oai_auto_enabled', '');
       FreshRSS_Context::$user_conf->oai_auto_min_time = Minz_Request::param('oai_auto_min_time', '5');
       FreshRSS_Context::$user_conf->oai_auto_feeds = Minz_Request::param('oai_auto_feeds', '');

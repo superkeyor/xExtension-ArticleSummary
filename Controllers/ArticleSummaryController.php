@@ -13,6 +13,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     $oai_model = FreshRSS_Context::$user_conf->oai_model ?? '';
     $oai_prompt = FreshRSS_Context::$user_conf->oai_prompt ?? '';
     $oai_provider = FreshRSS_Context::$user_conf->oai_provider ?? '';
+    $oai_max_tokens = (int)(FreshRSS_Context::$user_conf->oai_max_tokens ?? '2048');
 
     if (
       $this->isEmpty($oai_url)
@@ -59,7 +60,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
               "content" => "input: \n" . $this->htmlToMarkdown($content),
             ]
           ],
-          "max_completion_tokens" => 2048, // You can adjust the length of the summary as needed
+          "max_completion_tokens" => $oai_max_tokens,
           "temperature" => 1, // You can adjust the randomness/temperature of the generated text as needed
           "n" => 1 // Generate summary
         ),
