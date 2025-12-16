@@ -8,7 +8,7 @@
 }
 
 .oai-summary-btn {
-  font-size: 1.2em;
+  font-size: 16px; /* Absolute size, or use 0.875rem */
   margin-bottom: 0.5em;
   cursor: pointer;
   background: #4a4a4a;
@@ -16,6 +16,8 @@
   border: 1px solid #888;
   border-radius: 5px;
   display: inline-block;
+  min-height: 32px; /* Ensure minimum height */
+  line-height: 1.4; /* Better text alignment */
 }
 
 .oai-summary-btn:hover {
