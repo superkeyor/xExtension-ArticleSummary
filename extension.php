@@ -26,12 +26,9 @@ class ArticleSummaryExtension extends Minz_Extension
       )
     ));
     
-    // Check if summary already exists in content
-    if (strpos($entry->content(), '<!-- AI_SUMMARY_START -->') !== false) {
-      // Summary already exists, don't add buttons
-      return $entry;
-    }
-    
+    // Keep the buttons visible even when a summary exists so users can regenerate it.
+    // The old summary block is replaced during save instead of being blocked.
+
     // Create top button and content div
     $topButton = '<div class="oai-summary-wrap">'
       . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn"></button>'

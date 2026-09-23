@@ -117,16 +117,14 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
 
       // Get current content
       $current_content = $entry->content();
-      
-      // Check if summary already exists
-      if (strpos($current_content, '<!-- AI_SUMMARY_START -->') !== false) {
-        echo json_encode(array('status' => 200, 'message' => 'Summary already exists'));
-        exit;
-      }
+
+      // Remove any existing summary block so the regenerated version can replace it.
+      $summary_pattern = '/<div class="ai-summary-block">\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s';
+      $current_content = preg_replace($summary_pattern, '', $current_content, 1);
 
       // Decode HTML entities if they exist in the summary
       $decoded_summary = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-      
+
       // Create summary HTML block using CSS classes
       $summary_html = '<div class="ai-summary-block">'
         . '<!-- AI_SUMMARY_START -->'

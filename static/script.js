@@ -98,11 +98,11 @@ async function summarizeButtonClick(target) {
     return;
   }
 
-  // Hide any existing saved summaries in the article during regeneration
+  // Remove any existing saved summary block in the article before rendering the new one.
   const article = container.closest('.flux_content');
   if (article) {
     article.querySelectorAll('.ai-summary-block').forEach(block => {
-      block.style.display = 'none';
+      block.remove();
     });
   }
 
