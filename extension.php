@@ -128,7 +128,7 @@ class ArticleSummaryExtension extends Minz_Extension
             
             if ($summary) {
               // Save raw summary (will be parsed by marked.js on frontend display)
-              $summary_html = '<div class="ai-summary-block">'
+              $summary_html = '<div class="ai-summary-block oai-summary-wrap">'
                 . '<!-- AI_SUMMARY_START -->'
                 . '<h3>✨ AI Summary</h3>'
                 . '<div class="ai-summary-content">' . $summary . '</div>'

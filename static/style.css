@@ -69,6 +69,10 @@
   border: 1px solid #888;
 }
 
+.ai-summary-block.oai-summary-wrap {
+  display: block;
+}
+
 .ai-summary-block h3 {
   margin-top: 0;
   font-size: 1.2em;
