@@ -34,13 +34,18 @@ class ArticleSummaryExtension extends Minz_Extension
       $content = preg_replace('/<div class="ai-summary-block"[^>]*>.*?<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->.*?<\/div>\s*/s', '', $content, 1);
     }
 
-    $wrapper = '<div class="oai-summary-wrap">'
+    $topWrapper = '<div class="oai-summary-wrap">'
       . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn">✨Summarize</button>'
       . '<div class="oai-summary-content"></div>'
       . $existing_summary
       . '</div>';
 
-    $entry->_content($wrapper . $content);
+    $bottomWrapper = '<div class="oai-summary-wrap">'
+      . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn">✨Summarize</button>'
+      . '<div class="oai-summary-content"></div>'
+      . '</div>';
+
+    $entry->_content($topWrapper . $content . $bottomWrapper);
     return $entry;
   }
 
