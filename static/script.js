@@ -80,22 +80,34 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
   // console.log(content);
   
   if (summaryText) {
-    container.classList.add('ai-summary-block');
-    container.classList.add('oai-summary-wrap');
+    const article = container.closest('.flux_content');
+    let summaryBlock = container.nextElementSibling;
 
-    // Match the saved article markup so the live preview and refreshed view use the same header.
-    let header = container.querySelector('.ai-summary-header');
+    if (!summaryBlock || !summaryBlock.classList.contains('ai-summary-block')) {
+      summaryBlock = document.createElement('div');
+      summaryBlock.className = 'ai-summary-block oai-summary-wrap';
+      container.insertAdjacentElement('afterend', summaryBlock);
+    }
+
+    const summaryContent = summaryBlock.querySelector('.ai-summary-content') || document.createElement('div');
+    summaryContent.className = 'ai-summary-content';
+    if (!summaryBlock.contains(summaryContent)) {
+      summaryBlock.appendChild(summaryContent);
+    }
+
+    let header = summaryBlock.querySelector('.ai-summary-header');
     if (!header) {
       header = document.createElement('h3');
       header.className = 'ai-summary-header';
       header.textContent = '✨ AI Summary';
-      container.insertBefore(header, content);
+      summaryBlock.insertBefore(header, summaryContent);
     }
 
     // Replace newlines with <br>, except before certain HTML tags or at the end
     const rendered = summaryText.replace(/(?:\r\n|\r|\n)(?![\s]*<(?:ul|li|\/div|\/ul|\/li)>)(?![\s]*$)/g, '<br>');
-    content.innerHTML = rendered;
+    summaryContent.innerHTML = rendered;
     container.dataset.lastSummary = rendered;
+    summaryBlock.dataset.lastSummary = rendered;
   }
 }
 
