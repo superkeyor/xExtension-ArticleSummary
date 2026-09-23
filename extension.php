@@ -26,8 +26,11 @@ class ArticleSummaryExtension extends Minz_Extension
       )
     ));
     
-    // Keep the buttons visible even when a summary exists so users can regenerate it.
-    // The old summary block is replaced during save instead of being blocked.
+    // Summary already exists: do not add duplicate button wrappers.
+    // Regeneration is handled by the live summary block below, which replaces the old summary in-place.
+    if (strpos($entry->content(), '<!-- AI_SUMMARY_START -->') !== false) {
+      return $entry;
+    }
 
     // Create top button and content div
     $topButton = '<div class="oai-summary-wrap">'
