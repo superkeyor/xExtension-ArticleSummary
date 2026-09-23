@@ -30,15 +30,15 @@ class ArticleSummaryExtension extends Minz_Extension
     $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>.*?<\/div>\s*/s', '', $content);
 
     $existing_summary = '';
-    if (preg_match('/<div class="ai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', $content, $matches)) {
+    if (preg_match('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', $content, $matches)) {
       $summary_markdown = trim($matches[1]);
       $summary_markdown = html_entity_decode($summary_markdown, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-      $summary_html = '<div class="ai-summary-block">'
-        . '<h3 class="ai-summary-header">✨ AI Summary</h3>'
-        . '<div class="ai-summary-content">' . htmlspecialchars($summary_markdown, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '</div>'
+      $summary_html = '<div class="oai-summary-block">'
+        . '<h3 class="oai-summary-header">✨ AI Summary</h3>'
+        . '<div class="oai-summary-content">' . htmlspecialchars($summary_markdown, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '</div>'
         . '</div>';
       $existing_summary = $summary_html;
-      $content = preg_replace('/<div class="ai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
+      $content = preg_replace('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
     }
 
     $topWrapper = '<div class="oai-summary-wrap">'
@@ -131,16 +131,15 @@ class ArticleSummaryExtension extends Minz_Extension
             $summary = $this->generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens);
             
             if ($summary) {
-              // Save raw summary (will be parsed by marked.js on frontend display)
-              $summary_html = '<div class="ai-summary-block">'
+              // Save summary payload only; the UI title is injected once by JS at render time.
+              $summary_html = '<div class="oai-summary-block">'
                 . '<!-- AI_SUMMARY_START -->'
-                . '<h3>✨ AI Summary</h3>'
-                . '<div class="ai-summary-content">' . $summary . '</div>'
+                . $summary
                 . '<!-- AI_SUMMARY_END -->'
                 . '</div>';
               
-              // Update entry content
-              $new_content = $summary_html . $entry->content();
+              // Update entry content without re-saving the button UI structure.
+              $new_content = $summary_html . $this->stripSummaryMarkup($entry->content());
               $entry->_content($new_content);
               $entry->_hash(md5($new_content));
               $entryDAO->updateEntry($entry->toArray());

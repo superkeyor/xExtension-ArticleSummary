@@ -119,17 +119,17 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       $current_content = $entry->content();
 
       // Remove all existing summary blocks so the regenerated version replaces the prior saved summary cleanly.
-      $summary_pattern = '/<div class="ai-summary-block[^>]*">\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s';
+      $summary_pattern = '/<div class="oai-summary-block[^>]*">\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s';
       $current_content = preg_replace($summary_pattern, '', $current_content);
 
       // Decode HTML entities if they exist in the summary
       $decoded_summary = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
       // Create summary HTML block using CSS classes
-      $summary_html = '<div class="ai-summary-block">'
+      $summary_html = '<div class="oai-summary-block">'
         . '<!-- AI_SUMMARY_START -->'
         . '<h3>✨ AI Summary</h3>'
-        . '<div class="ai-summary-content">' . $decoded_summary . '</div>'
+        . '<div class="oai-summary-content">' . $decoded_summary . '</div>'
         . '<!-- AI_SUMMARY_END -->'
         . '</div>';
 
@@ -158,7 +158,8 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     }
 
     $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>.*?<\/div>\s*/s', '', $content);
-    $content = preg_replace('/<div class="ai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
+    $content = preg_replace('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
+    $content = preg_replace('/<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/is', '', $content);
 
     return $content;
   }
