@@ -309,7 +309,7 @@ async function saveSummaryToArticle(container) {
       const article = container.closest('.flux_content');
       if (article) {
         article.querySelectorAll('.oai-summary-wrap').forEach(wrap => {
-          if (wrap !== container) {
+          if (wrap !== container && !wrap.querySelector('.ai-summary-content')) {
             wrap.remove();
           }
         });

@@ -26,11 +26,7 @@ class ArticleSummaryExtension extends Minz_Extension
       )
     ));
     
-    // Summary already exists: do not add duplicate button wrappers.
-    // Regeneration is handled by the live summary block below, which replaces the old summary in-place.
-    if (strpos($entry->content(), '<!-- AI_SUMMARY_START -->') !== false) {
-      return $entry;
-    }
+    // Keep the buttons visible even when a summary exists so users can regenerate without a refresh.
 
     // Create top button and content div
     $topButton = '<div class="oai-summary-wrap">'
@@ -131,7 +127,7 @@ class ArticleSummaryExtension extends Minz_Extension
             
             if ($summary) {
               // Save raw summary (will be parsed by marked.js on frontend display)
-              $summary_html = '<div class="ai-summary-block oai-summary-wrap">'
+              $summary_html = '<div class="ai-summary-block">'
                 . '<!-- AI_SUMMARY_START -->'
                 . '<h3>✨ AI Summary</h3>'
                 . '<div class="ai-summary-content">' . $summary . '</div>'
