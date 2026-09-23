@@ -6,6 +6,17 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function normalizeSummaryText(value) {
+  return String(value || '')
+    .replace(/<!-- AI_SUMMARY_START -->|<!-- AI_SUMMARY_END -->/g, '')
+    .replace(/<div class="oai-summary-block"[^>]*>/gi, '')
+    .replace(/<div class="oai-summary-content"[^>]*>/gi, '')
+    .replace(/<\/div>/gi, '')
+    .replace(/^<h3[^>]*>.*?✨ AI Summary.*?<\/h3>\s*/is, '')
+    .replace(/<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/is, '')
+    .trim();
+}
+
 // New retry helper function with exponential backoff
 async function retryWithBackoff(fn, retries = MAX_RETRIES) {
   for (let i = 0; i < retries; i++) {

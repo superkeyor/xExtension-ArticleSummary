@@ -115,26 +115,18 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
         exit;
       }
 
-      // Get current content
-      $current_content = $entry->content();
+      // Get current content and remove any stale summary container/header markup.
+      $current_content = $this->stripSummaryMarkup($entry->content());
 
-      // Remove all existing summary blocks so the regenerated version replaces the prior saved summary cleanly.
-      $summary_pattern = '/<div class="oai-summary-block[^>]*">\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s';
-      $current_content = preg_replace($summary_pattern, '', $current_content);
-
-      // Decode HTML entities if they exist in the summary
+      // Work with raw summary text only; the UI title is inserted by JS.
       $decoded_summary = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+      $decoded_summary = preg_replace('/^<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/is', '', $decoded_summary);
+      $decoded_summary = trim($decoded_summary);
 
-      // Create summary HTML block using CSS classes
-      $summary_html = '<div class="oai-summary-block">'
-        . '<!-- AI_SUMMARY_START -->'
-        . '<h3>✨ AI Summary</h3>'
-        . '<div class="oai-summary-content">' . $decoded_summary . '</div>'
-        . '<!-- AI_SUMMARY_END -->'
-        . '</div>';
-
-      // Add summary only at top of content
-      $new_content = $summary_html . $current_content;
+      // Store only the raw summary blob, not the button/widget HTML.
+      $summary_blob = '<!-- AI_SUMMARY_START -->' . $decoded_summary . '<!-- AI_SUMMARY_END -->';
+      $new_content = $summary_blob . "
+" . $current_content;
 
       // Update entry content
       $entry->_content($new_content);
@@ -158,7 +150,8 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     }
 
     $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>.*?<\/div>\s*/s', '', $content);
-    $content = preg_replace('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
+    $content = preg_replace('/<div class="oai-summary-block"[^>]*>.*?<\/div>\s*/s', '', $content);
+    $content = preg_replace('/<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->/s', '', $content);
     $content = preg_replace('/<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/is', '', $content);
 
     return $content;
