@@ -40,7 +40,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       exit;
     }
 
-    $content = $entry->content(); // Replace with article content
+    $content = $this->stripSummaryMarkup($entry->content());
 
     // Process $oai_url
     // Open AI Input
@@ -149,6 +149,18 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       echo json_encode(array('status' => 500, 'error' => $e->getMessage()));
     }
     exit;
+  }
+
+  private function stripSummaryMarkup($content)
+  {
+    if (!is_string($content)) {
+      return '';
+    }
+
+    $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>.*?<\/div>\s*/s', '', $content);
+    $content = preg_replace('/<div class="ai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
+
+    return $content;
   }
 
   private function isEmpty($item)

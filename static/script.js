@@ -115,13 +115,13 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
       summaryBlock.appendChild(summaryContent);
     }
 
-    const rendered = summaryText.replace(/(?:\r\n|\r|\n)(?![\s]*<(?:ul|li|\/div|\/ul|\/li)>)(?![\s]*$)/g, '<br>');
+    const rendered = marked.parse(summaryText).replace(/(?:\r\n|\r|\n)(?![\s]*<(?:ul|li|\/div|\/ul|\/li)>)(?![\s]*$)/g, '<br>');
     summaryContent.innerHTML = rendered;
     content.innerHTML = '';
     content.style.display = 'none';
     summaryBlock.style.display = 'block';
-    container.dataset.lastSummary = rendered;
-    summaryBlock.dataset.lastSummary = rendered;
+    container.dataset.lastSummary = summaryText;
+    summaryBlock.dataset.lastSummary = summaryText;
 
     if (article) {
       article.querySelectorAll('.ai-summary-block').forEach(block => {
@@ -241,7 +241,7 @@ async function sendOpenAIRequest(container, oaiParams) {
 
       const chunk = decoder.decode(value, { stream: true });
       const text = JSON.parse(chunk)?.choices[0]?.message?.content || '';
-      setOaiState(container, 0, null, marked.parse(text));
+      setOaiState(container, 0, null, text);
     }
   } catch (error) {
     console.error(error);
@@ -286,8 +286,8 @@ async function sendOllamaRequest(container, oaiParams){
         try {
           if (jsonString) {
             const json = JSON.parse(jsonString);
-            text += json.response
-            setOaiState(container, 0, null, marked.parse(text));
+            text += json.response;
+            setOaiState(container, 0, null, text);
           }
         } catch (e) {
           // If JSON parsing fails, output the error and keep the chunk for future attempts

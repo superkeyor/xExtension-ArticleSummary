@@ -27,11 +27,18 @@ class ArticleSummaryExtension extends Minz_Extension
     ));
 
     $content = $entry->content();
-    $existing_summary = '';
+    $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>.*?<\/div>\s*/s', '', $content);
 
-    if (preg_match('/<div class="ai-summary-block"[^>]*>.*?<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->.*?<\/div>\s*/s', $content, $matches)) {
-      $existing_summary = $matches[0];
-      $content = preg_replace('/<div class="ai-summary-block"[^>]*>.*?<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->.*?<\/div>\s*/s', '', $content, 1);
+    $existing_summary = '';
+    if (preg_match('/<div class="ai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', $content, $matches)) {
+      $summary_markdown = trim($matches[1]);
+      $summary_markdown = html_entity_decode($summary_markdown, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+      $summary_html = '<div class="ai-summary-block">'
+        . '<h3 class="ai-summary-header">✨ AI Summary</h3>'
+        . '<div class="ai-summary-content">' . htmlspecialchars($summary_markdown, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '</div>'
+        . '</div>';
+      $existing_summary = $summary_html;
+      $content = preg_replace('/<div class="ai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
     }
 
     $topWrapper = '<div class="oai-summary-wrap">'
@@ -175,8 +182,8 @@ class ArticleSummaryExtension extends Minz_Extension
 
   private function generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens = 4096)
   {
-    // Use htmlToMarkdown to convert article content (same as manual processing)
-    $content = $this->htmlToMarkdown($entry->content());
+    // Use the original article content only; remove any previously saved summary block before prompting the model.
+    $content = $this->htmlToMarkdown($this->stripSummaryMarkup($entry->content()));
 
     // Prepare API request
     if ($oai_provider === 'openai') {
