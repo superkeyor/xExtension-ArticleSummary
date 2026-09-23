@@ -80,6 +80,9 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
   // console.log(content);
   
   if (summaryText) {
+    container.classList.add('ai-summary-block');
+    container.classList.add('oai-summary-wrap');
+
     // Match the saved article markup so the live preview and refreshed view use the same header.
     let header = container.querySelector('.ai-summary-header');
     if (!header) {
@@ -287,7 +290,7 @@ async function saveSummaryToArticle(container) {
       if (button) {
         button.style.display = '';
         button.disabled = false;
-        button.textContent = '✨ Regenerate';
+        button.textContent = '✨Summarize';
       }
 
       // Remove other button containers (the one that wasn't clicked)

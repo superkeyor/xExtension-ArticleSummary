@@ -7,6 +7,25 @@
   border: 1px solid #888;
 }
 
+.oai-summary-wrap.ai-summary-block {
+  display: block;
+  padding: 1em;
+  margin-bottom: 2em;
+  border: 1px solid #888;
+  border-radius: 10px;
+  background: #6D6D6D;
+  color: #FFFFFF;
+}
+
+.oai-summary-wrap.ai-summary-block .oai-summary-btn {
+  margin-bottom: 0.75em;
+}
+
+.oai-summary-wrap.ai-summary-block .ai-summary-header {
+  margin: 0 0 0.5em 0;
+  font-size: 1.2em;
+}
+
 .oai-summary-btn {
   font-size: 16px; /* Absolute size, or use 0.875rem */
   margin-bottom: 0.5em;
