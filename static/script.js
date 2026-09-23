@@ -54,45 +54,50 @@ function configureSummarizeButtons() {
 function setOaiState(container, statusType, statusMsg, summaryText) {
   const button = container.querySelector('.oai-summary-btn');
   const content = container.querySelector('.oai-summary-content');
-  
-  // console.log('setOaiState called for container:', container);
-  // console.log('Status type:', statusType, 'Message:', statusMsg);
-  
-  // 根据 state 设置不同的状态
+  const wrap = container.closest('.oai-summary-wrap');
+
+  if (!button || !content || !wrap) {
+    return;
+  }
+
   if (statusType === 1) {
     container.classList.add('oai-loading');
     container.classList.remove('oai-error');
     content.innerHTML = statusMsg;
+    content.style.display = 'block';
+    const savedSummary = wrap.querySelector('.ai-summary-block');
+    if (savedSummary) {
+      savedSummary.style.display = 'none';
+    }
     button.disabled = true;
-  } else if (statusType === 2) {
+    return;
+  }
+
+  if (statusType === 2) {
     container.classList.remove('oai-loading');
     container.classList.add('oai-error');
     content.innerHTML = statusMsg;
-    button.disabled = false;
-  } else {
-    container.classList.remove('oai-loading');
-    container.classList.remove('oai-error');
-    if (statusMsg === 'finish'){
-      button.disabled = false;
+    content.style.display = 'block';
+    const savedSummary = wrap.querySelector('.ai-summary-block');
+    if (savedSummary) {
+      savedSummary.style.display = 'none';
     }
+    button.disabled = false;
+    return;
   }
 
-  // console.log(content);
-  
+  container.classList.remove('oai-loading');
+  container.classList.remove('oai-error');
+  button.disabled = false;
+
   if (summaryText) {
     const article = container.closest('.flux_content');
-    let summaryBlock = container.nextElementSibling;
+    let summaryBlock = wrap.querySelector('.ai-summary-block');
 
-    if (!summaryBlock || !summaryBlock.classList.contains('ai-summary-block')) {
+    if (!summaryBlock) {
       summaryBlock = document.createElement('div');
-      summaryBlock.className = 'ai-summary-block oai-summary-wrap';
-      container.insertAdjacentElement('afterend', summaryBlock);
-    }
-
-    const summaryContent = summaryBlock.querySelector('.ai-summary-content') || document.createElement('div');
-    summaryContent.className = 'ai-summary-content';
-    if (!summaryBlock.contains(summaryContent)) {
-      summaryBlock.appendChild(summaryContent);
+      summaryBlock.className = 'ai-summary-block';
+      wrap.appendChild(summaryBlock);
     }
 
     let header = summaryBlock.querySelector('.ai-summary-header');
@@ -100,37 +105,68 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
       header = document.createElement('h3');
       header.className = 'ai-summary-header';
       header.textContent = '✨ AI Summary';
-      summaryBlock.insertBefore(header, summaryContent);
+      summaryBlock.appendChild(header);
     }
 
-    // Replace newlines with <br>, except before certain HTML tags or at the end
+    let summaryContent = summaryBlock.querySelector('.ai-summary-content');
+    if (!summaryContent) {
+      summaryContent = document.createElement('div');
+      summaryContent.className = 'ai-summary-content';
+      summaryBlock.appendChild(summaryContent);
+    }
+
     const rendered = summaryText.replace(/(?:\r\n|\r|\n)(?![\s]*<(?:ul|li|\/div|\/ul|\/li)>)(?![\s]*$)/g, '<br>');
     summaryContent.innerHTML = rendered;
+    content.innerHTML = '';
+    content.style.display = 'none';
+    summaryBlock.style.display = 'block';
     container.dataset.lastSummary = rendered;
     summaryBlock.dataset.lastSummary = rendered;
+
+    if (article) {
+      article.querySelectorAll('.ai-summary-block').forEach(block => {
+        if (block !== summaryBlock && block.closest('.oai-summary-wrap') !== wrap) {
+          block.remove();
+        }
+      });
+    }
+  } else if (statusMsg === 'finish') {
+    content.innerHTML = '';
+    content.style.display = 'none';
+    const savedSummary = wrap.querySelector('.ai-summary-block');
+    if (savedSummary) {
+      savedSummary.style.display = 'block';
+    }
   }
 }
 
 async function summarizeButtonClick(target) {
   var container = target.parentNode;
-  // console.log('Button clicked, container:', container);
-  // console.log('Container classes:', container.className);
-  
+
   if (container.classList.contains('oai-loading')) {
     return;
   }
 
-  // Remove any existing saved summary block in the article before rendering the new one.
   const article = container.closest('.flux_content');
   if (article) {
     article.querySelectorAll('.ai-summary-block').forEach(block => {
-      block.remove();
+      if (block.closest('.oai-summary-wrap') !== container) {
+        block.remove();
+      }
     });
+  }
+
+  const wrap = container.closest('.oai-summary-wrap');
+  if (wrap) {
+    const existing = wrap.querySelector('.ai-summary-block');
+    if (existing) {
+      existing.style.display = 'none';
+    }
   }
 
   setOaiState(container, 1, 'Loading...', null);
 
-  // 这是 php 获取参数的地址 - This is the address where PHP gets the parameters
+  // This is the PHP endpoint that receives the parameters
   var url = target.dataset.request;
   var data = {
     ajax: true,
@@ -151,7 +187,6 @@ async function summarizeButtonClick(target) {
     });
 
     const xresp = response.data;
-    // console.log(xresp);
 
     if (response.status !== 200 || !xresp.response || !xresp.response.data) {
       throw new Error('Request Failed');
@@ -160,7 +195,6 @@ async function summarizeButtonClick(target) {
     if (xresp.response.error) {
       setOaiState(container, 2, xresp.response.data, null);
     } else {
-      // 解析 PHP 返回的参数
       const oaiParams = xresp.response.data;
       const oaiProvider = xresp.response.provider;
       if (oaiProvider === 'openai') {
@@ -280,9 +314,6 @@ async function saveSummaryToArticle(container) {
   }
 
   try {
-    // Don't show "Saving..." status to avoid clearing the summary content
-    // The summary is already displaying from streaming
-    
     const response = await axios.post('?c=ArticleSummary&a=saveSummary', {
       id: entryId,
       summary: summary,
@@ -295,9 +326,6 @@ async function saveSummaryToArticle(container) {
     });
 
     if (response.data.status === 200 && response.data.inserted) {
-      // Summary is already showing from streaming, just clean up the UI
-      
-      // Keep the regenerate button visible so the user can repeat summarization without refreshing.
       const button = container.querySelector('.oai-summary-btn');
       if (button) {
         button.style.display = '';
@@ -305,20 +333,13 @@ async function saveSummaryToArticle(container) {
         button.textContent = '✨Summarize';
       }
 
-      // Remove other button containers (the one that wasn't clicked)
       const article = container.closest('.flux_content');
       if (article) {
         article.querySelectorAll('.oai-summary-wrap').forEach(wrap => {
-          if (wrap !== container && !wrap.querySelector('.ai-summary-content')) {
+          if (wrap !== container.closest('.oai-summary-wrap')) {
             wrap.remove();
           }
         });
-      }
-
-      // Optional: add a small "saved" indicator
-      const content = container.querySelector('.ai-summary-content');
-      if (content && !content.dataset.saved) {
-        content.dataset.saved = 'true';
       }
     } else {
       setOaiState(container, 0, 'Summary generated (already in article)', null);

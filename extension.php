@@ -25,29 +25,22 @@ class ArticleSummaryExtension extends Minz_Extension
         'id' => $entry->id()
       )
     ));
-    
-    // Keep the buttons visible even when a summary exists so users can regenerate without a refresh.
 
-    // Create top button and content div
-    $topButton = '<div class="oai-summary-wrap">'
-      . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn"></button>'
+    $content = $entry->content();
+    $existing_summary = '';
+
+    if (preg_match('/<div class="ai-summary-block"[^>]*>.*?<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->.*?<\/div>\s*/s', $content, $matches)) {
+      $existing_summary = $matches[0];
+      $content = preg_replace('/<div class="ai-summary-block"[^>]*>.*?<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->.*?<\/div>\s*/s', '', $content, 1);
+    }
+
+    $wrapper = '<div class="oai-summary-wrap">'
+      . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn">✨Summarize</button>'
       . '<div class="oai-summary-content"></div>'
+      . $existing_summary
       . '</div>';
-    
-    // Create spacer and bottom button
-    $bottomButton = '<div>&nbsp;</div>'
-      . '<div class="oai-summary-wrap">'
-      . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn"></button>'
-      . '<div class="oai-summary-content"></div>'
-      . '</div>';
-    
-    // Add both buttons to the content
-    $entry->_content(
-      $topButton
-      . $entry->content()
-      . $bottomButton
-    );
-    
+
+    $entry->_content($wrapper . $content);
     return $entry;
   }
 
