@@ -80,12 +80,19 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
   // console.log(content);
   
   if (summaryText) {
-    // console.log('Summary text:');
-    // console.log(summaryText);
+    // Match the saved article markup so the live preview and refreshed view use the same header.
+    let header = container.querySelector('.ai-summary-header');
+    if (!header) {
+      header = document.createElement('h3');
+      header.className = 'ai-summary-header';
+      header.textContent = '✨ AI Summary';
+      container.insertBefore(header, content);
+    }
+
     // Replace newlines with <br>, except before certain HTML tags or at the end
-    content.innerHTML = summaryText.replace(/(?:\r\n|\r|\n)(?![\s]*<(?:ul|li|\/div|\/ul|\/li)>)(?![\s]*$)/g, '<br>');
-    // Store the last summary text in the container for later use
-    container.dataset.lastSummary = content.innerHTML;
+    const rendered = summaryText.replace(/(?:\r\n|\r|\n)(?![\s]*<(?:ul|li|\/div|\/ul|\/li)>)(?![\s]*$)/g, '<br>');
+    content.innerHTML = rendered;
+    container.dataset.lastSummary = rendered;
   }
 }
 
@@ -275,12 +282,14 @@ async function saveSummaryToArticle(container) {
     if (response.data.status === 200 && response.data.inserted) {
       // Summary is already showing from streaming, just clean up the UI
       
-      // Hide the button in the current container (summary is already displayed)
+      // Keep the regenerate button visible so the user can repeat summarization without refreshing.
       const button = container.querySelector('.oai-summary-btn');
       if (button) {
-        button.style.display = 'none';
+        button.style.display = '';
+        button.disabled = false;
+        button.textContent = '✨ Regenerate';
       }
-      
+
       // Remove other button containers (the one that wasn't clicked)
       const article = container.closest('.flux_content');
       if (article) {
@@ -290,9 +299,9 @@ async function saveSummaryToArticle(container) {
           }
         });
       }
-      
+
       // Optional: add a small "saved" indicator
-      const content = container.querySelector('.oai-summary-content');
+      const content = container.querySelector('.ai-summary-content');
       if (content && !content.dataset.saved) {
         content.dataset.saved = 'true';
       }
