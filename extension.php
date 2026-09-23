@@ -28,11 +28,6 @@ class ArticleSummaryExtension extends Minz_Extension
 
     $content = $entry->content();
     $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>.*?<\/div>\s*/s', '', $content);
-<<<<<<< HEAD
-    $content = preg_replace('/<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->/s', '', $content);
-    $content = preg_replace('/<div class="oai-summary-block"[^>]*>.*?<\/div>\s*/s', '', $content);
-    $content = preg_replace('/<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/is', '', $content);
-=======
 
     $existing_summary = '';
     if (preg_match('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', $content, $matches)) {
@@ -45,11 +40,11 @@ class ArticleSummaryExtension extends Minz_Extension
       $existing_summary = $summary_html;
       $content = preg_replace('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
     }
->>>>>>> 1670ed6 (clean summary to db and css tidy up)
 
     $topWrapper = '<div class="oai-summary-wrap">'
       . '<button data-request="' . $url_summary . '" data-entry-id="' . $entry->id() . '" class="oai-summary-btn">✨Summarize</button>'
       . '<div class="oai-summary-content"></div>'
+      . $existing_summary
       . '</div>';
 
     $bottomWrapper = '<div class="oai-summary-wrap">'
@@ -136,11 +131,6 @@ class ArticleSummaryExtension extends Minz_Extension
             $summary = $this->generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens);
             
             if ($summary) {
-<<<<<<< HEAD
-              $summary_blob = '<!-- AI_SUMMARY_START -->' . trim($summary) . '<!-- AI_SUMMARY_END -->';
-              $new_content = $summary_blob . "
-" . $this->stripSummaryMarkup($entry->content());
-=======
               // Save summary payload only; the UI title is injected once by JS at render time.
               $summary_html = '<div class="oai-summary-block">'
                 . '<!-- AI_SUMMARY_START -->'
@@ -150,7 +140,6 @@ class ArticleSummaryExtension extends Minz_Extension
               
               // Update entry content without re-saving the button UI structure.
               $new_content = $summary_html . $this->stripSummaryMarkup($entry->content());
->>>>>>> 1670ed6 (clean summary to db and css tidy up)
               $entry->_content($new_content);
               $entry->_hash(md5($new_content));
               $entryDAO->updateEntry($entry->toArray());
