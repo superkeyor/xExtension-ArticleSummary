@@ -1,6 +1,9 @@
 <?php
 class ArticleSummaryExtension extends Minz_Extension
 {
+  const SUMMARY_START = '<!-- AI_SUMMARY_START -->';
+  const SUMMARY_END = '<!-- AI_SUMMARY_END -->';
+
   protected array $csp_policies = [
     'default-src' => '*',
   ];
@@ -26,19 +29,14 @@ class ArticleSummaryExtension extends Minz_Extension
       )
     ));
 
-    $content = $entry->content();
-    $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>.*?<\/div>\s*/s', '', $content);
+    [$summary_markdown, $content] = self::splitSummary($entry->content());
 
     $existing_summary = '';
-    if (preg_match('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', $content, $matches)) {
-      $summary_markdown = trim($matches[1]);
-      $summary_markdown = html_entity_decode($summary_markdown, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-      $summary_html = '<div class="oai-summary-block">'
+    if ($summary_markdown !== null) {
+      $existing_summary = '<div class="oai-summary-block">'
         . '<h3 class="oai-summary-header">✨ AI Summary</h3>'
         . '<div class="oai-summary-content">' . htmlspecialchars($summary_markdown, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '</div>'
         . '</div>';
-      $existing_summary = $summary_html;
-      $content = preg_replace('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
     }
 
     $topWrapper = '<div class="oai-summary-wrap">'
@@ -54,6 +52,43 @@ class ArticleSummaryExtension extends Minz_Extension
 
     $entry->_content($topWrapper . $content . $bottomWrapper);
     return $entry;
+  }
+
+  /**
+   * Split stored content into [summary markdown or null, article content without any summary markup].
+   * Also understands legacy formats (div/h3 wrapped summaries, persisted button UI).
+   */
+  public static function splitSummary($content)
+  {
+    if (!is_string($content)) {
+      return [null, ''];
+    }
+
+    $summary = null;
+    $pattern = '/(?:<div class="oai-summary-block"[^>]*>\s*)?<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->(?:\s*<\/div>)?\s*/s';
+    if (preg_match($pattern, $content, $matches)) {
+      $summary = preg_replace('/^\s*<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/u', '', $matches[1]);
+      if (preg_match('/^\s*<div class="oai-summary-content"[^>]*>(.*)<\/div>\s*$/s', $summary, $inner)) {
+        $summary = $inner[1];
+      }
+      $summary = trim(str_replace('--&gt;', '-->', $summary));
+      if ($summary === '') {
+        $summary = null;
+      }
+    }
+
+    $content = preg_replace($pattern, '', $content);
+    $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>\s*<button[^>]*>.*?<\/button>\s*<div class="oai-summary-content"[^>]*>\s*<\/div>\s*<\/div>\s*/s', '', $content);
+
+    return [$summary, $content];
+  }
+
+  /** Build the content to persist: bare summary markers at the top, then the untouched article content. */
+  public static function joinSummary($summary, $content)
+  {
+    // A literal "-->" would terminate the HTML comment early.
+    $summary = str_replace('-->', '--&gt;', trim($summary));
+    return self::SUMMARY_START . $summary . self::SUMMARY_END . $content;
   }
 
   public function handleUserMaintenance()
@@ -109,15 +144,16 @@ class ArticleSummaryExtension extends Minz_Extension
         Minz_Log::notice('ArticleSummary: Checking feed ' . $feed->id() . ' (' . $feed->name() . '), found ' . count($entries) . ' unread articles');
 
         foreach ($entries as $entry) {
-          // Skip if summary already exists
-          if (strpos($entry->content(), '<!-- AI_SUMMARY_START -->') !== false) {
+          // content(false): raw DB content, without enclosures FreshRSS appends for display
+          [$existing, $body] = self::splitSummary($entry->content(false));
+          if ($existing !== null) {
             $totalSkipped++;
             $skipReasons[] = 'Entry ' . $entry->id() . ': Summary already exists';
             continue;
           }
 
           // Calculate reading time
-          $reading_time = $this->calculateReadingTime($entry->content());
+          $reading_time = $this->calculateReadingTime($body);
           if ($reading_time < $min_reading_time) {
             $totalSkipped++;
             $skipReasons[] = 'Entry ' . $entry->id() . ': Reading time ' . $reading_time . ' min < ' . $min_reading_time . ' min';
@@ -128,20 +164,11 @@ class ArticleSummaryExtension extends Minz_Extension
 
           // Generate summary
           try {
-            $summary = $this->generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens);
+            $summary = $this->generateSummarySync($body, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens);
             
-            if ($summary) {
-              // Save summary payload only; the UI title is injected once by JS at render time.
-              $summary_html = '<div class="oai-summary-block">'
-                . '<!-- AI_SUMMARY_START -->'
-                . $summary
-                . '<!-- AI_SUMMARY_END -->'
-                . '</div>';
-              
-              // Update entry content without re-saving the button UI structure.
-              $new_content = $summary_html . $this->stripSummaryMarkup($entry->content());
-              $entry->_content($new_content);
-              $entry->_hash(md5($new_content));
+            if (is_string($summary) && trim($summary) !== '') {
+              // Keep the original hash so the next feed refresh does not treat the entry as changed and overwrite it.
+              $entry->_content(self::joinSummary($summary, $body));
               $entryDAO->updateEntry($entry->toArray());
               
               $totalProcessed++;
@@ -179,10 +206,9 @@ class ArticleSummaryExtension extends Minz_Extension
     }
   }
 
-  private function generateSummarySync($entry, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens = 4096)
+  private function generateSummarySync($body, $oai_url, $oai_key, $oai_model, $oai_prompt, $oai_provider, $oai_max_tokens = 4096)
   {
-    // Use the original article content only; remove any previously saved summary block before prompting the model.
-    $content = $this->htmlToMarkdown($this->stripSummaryMarkup($entry->content()));
+    $content = $this->htmlToMarkdown($body);
 
     // Prepare API request
     if ($oai_provider === 'openai') {
@@ -191,7 +217,7 @@ class ArticleSummaryExtension extends Minz_Extension
         'model' => $oai_model,
         'messages' => [
           ['role' => 'system', 'content' => $oai_prompt],
-          ['role' => 'user', 'content' => 'input: \n' . $content]
+          ['role' => 'user', 'content' => "input: \n" . $content]
         ],
         'max_completion_tokens' => $oai_max_tokens,
         'temperature' => 1,

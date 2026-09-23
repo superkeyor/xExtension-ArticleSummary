@@ -40,7 +40,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       exit;
     }
 
-    $content = $this->stripSummaryMarkup($entry->content());
+    [, $content] = ArticleSummaryExtension::splitSummary($entry->content());
 
     // Process $oai_url
     // Open AI Input
@@ -101,7 +101,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     $entry_id = Minz_Request::param('id');
     $summary = Minz_Request::param('summary');
 
-    if (!$entry_id || !$summary) {
+    if (!$entry_id || !is_string($summary) || trim($summary) === '') {
       echo json_encode(array('status' => 400, 'error' => 'Missing parameters'));
       exit;
     }
@@ -115,29 +115,13 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
         exit;
       }
 
-      // Get current content
-      $current_content = $entry->content();
+      // content(false): raw DB content, without enclosures FreshRSS appends for display
+      [, $body] = ArticleSummaryExtension::splitSummary($entry->content(false));
 
-      // Remove all existing summary blocks so the regenerated version replaces the prior saved summary cleanly.
-      $summary_pattern = '/<div class="oai-summary-block[^>]*">\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s';
-      $current_content = preg_replace($summary_pattern, '', $current_content);
-
-      // Decode HTML entities if they exist in the summary
+      // Minz_Request::param() HTML-escapes values; store the raw markdown
       $decoded_summary = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-      // Create summary HTML block using CSS classes
-      $summary_html = '<div class="oai-summary-block">'
-        . '<!-- AI_SUMMARY_START -->'
-        . '<h3>✨ AI Summary</h3>'
-        . '<div class="oai-summary-content">' . $decoded_summary . '</div>'
-        . '<!-- AI_SUMMARY_END -->'
-        . '</div>';
-
-      // Add summary only at top of content
-      $new_content = $summary_html . $current_content;
-
-      // Update entry content
-      $entry->_content($new_content);
+      $entry->_content(ArticleSummaryExtension::joinSummary($decoded_summary, $body));
       $entry_dao->updateEntry($entry->toArray());
 
       echo json_encode(array(
@@ -149,19 +133,6 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       echo json_encode(array('status' => 500, 'error' => $e->getMessage()));
     }
     exit;
-  }
-
-  private function stripSummaryMarkup($content)
-  {
-    if (!is_string($content)) {
-      return '';
-    }
-
-    $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>.*?<\/div>\s*/s', '', $content);
-    $content = preg_replace('/<div class="oai-summary-block"[^>]*>\s*<!-- AI_SUMMARY_START -->.*?<!-- AI_SUMMARY_END -->\s*<\/div>\s*/s', '', $content, 1);
-    $content = preg_replace('/<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/is', '', $content);
-
-    return $content;
   }
 
   private function isEmpty($item)
