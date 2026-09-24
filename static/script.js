@@ -83,6 +83,8 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
   if (statusType === 1) {
     container.classList.add('oai-loading');
     container.classList.remove('oai-error');
+    content.classList.add('oai-loading');
+    content.classList.remove('oai-error');
     content.innerHTML = statusMsg;
     content.style.display = 'block';
     const savedSummary = wrap.querySelector('.oai-summary-block');
@@ -96,6 +98,8 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
   if (statusType === 2) {
     container.classList.remove('oai-loading');
     container.classList.add('oai-error');
+    content.classList.remove('oai-loading');
+    content.classList.add('oai-error');
     content.innerHTML = statusMsg;
     content.style.display = 'block';
     const savedSummary = wrap.querySelector('.oai-summary-block');
@@ -108,6 +112,8 @@ function setOaiState(container, statusType, statusMsg, summaryText) {
 
   container.classList.remove('oai-loading');
   container.classList.remove('oai-error');
+  content.classList.remove('oai-loading');
+  content.classList.remove('oai-error');
   button.disabled = false;
 
   if (summaryText) {

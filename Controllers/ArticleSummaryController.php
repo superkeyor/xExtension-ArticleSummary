@@ -31,7 +31,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       exit;
     }
 
-    $entry_id = Minz_Request::param('id');
+    $entry_id = Minz_Request::paramString('id');
     $entry_dao = FreshRSS_Factory::createEntryDao();
     $entry = $entry_dao->searchById($entry_id);
 
@@ -98,10 +98,11 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
     // Set response header to JSON first, before any output
     header('Content-Type: application/json');
 
-    $entry_id = Minz_Request::param('id');
-    $summary = Minz_Request::param('summary');
+    $entry_id = Minz_Request::paramString('id');
+    // Raw markdown; it is escaped at display time.
+    $summary = Minz_Request::paramString('summary', true);
 
-    if (!$entry_id || !is_string($summary) || trim($summary) === '') {
+    if ($entry_id === '' || $summary === '') {
       echo json_encode(array('status' => 400, 'error' => 'Missing parameters'));
       exit;
     }
@@ -118,10 +119,7 @@ class FreshExtension_ArticleSummary_Controller extends Minz_ActionController
       // content(false): raw DB content, without enclosures FreshRSS appends for display
       [, $body] = ArticleSummaryExtension::splitSummary($entry->content(false));
 
-      // Minz_Request::param() HTML-escapes values; store the raw markdown
-      $decoded_summary = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-      $entry->_content(ArticleSummaryExtension::joinSummary($decoded_summary, $body));
+      $entry->_content(ArticleSummaryExtension::joinSummary($summary, $body));
       $entry_dao->updateEntry($entry->toArray());
 
       echo json_encode(array(

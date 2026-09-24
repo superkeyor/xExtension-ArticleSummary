@@ -21,6 +21,11 @@ class ArticleSummaryExtension extends Minz_Extension
 
   public function addSummaryButtons($entry)
   {
+    // The hook also runs for the GReader/Fever API, RSS output and export; only inject UI in the web views.
+    if (Minz_Request::controllerName() !== 'index' || !in_array(Minz_Request::actionName(), ['normal', 'reader', 'global'], true)) {
+      return $entry;
+    }
+
     $url_summary = Minz_Url::display(array(
       'c' => 'ArticleSummary',
       'a' => 'summarize',
@@ -67,20 +72,36 @@ class ArticleSummaryExtension extends Minz_Extension
     $summary = null;
     $pattern = '/(?:<div class="oai-summary-block"[^>]*>\s*)?<!-- AI_SUMMARY_START -->(.*?)<!-- AI_SUMMARY_END -->(?:\s*<\/div>)?\s*/s';
     if (preg_match($pattern, $content, $matches)) {
-      $summary = preg_replace('/^\s*<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/u', '', $matches[1]);
-      if (preg_match('/^\s*<div class="oai-summary-content"[^>]*>(.*)<\/div>\s*$/s', $summary, $inner)) {
-        $summary = $inner[1];
-      }
-      $summary = trim(str_replace('--&gt;', '-->', $summary));
-      if ($summary === '') {
-        $summary = null;
+      $summary = self::normalizeSummary($matches[1]);
+    }
+    $content = preg_replace($pattern, '', $content);
+
+    // Legacy: rendered button UI persisted into content, optionally holding an escaped summary.
+    $wrap_pattern = '/<div class="oai-summary-wrap"[^>]*>\s*<button[^>]*>[^<]*<\/button>\s*<div class="oai-summary-content"[^>]*>[^<]*<\/div>\s*'
+      . '(?:<div class="oai-summary-block"[^>]*>\s*<h3[^>]*>[^<]*<\/h3>\s*<div class="oai-summary-content"[^>]*>([^<]*)<\/div>\s*<\/div>\s*)?'
+      . '<\/div>\s*/u';
+    if ($summary === null && preg_match_all($wrap_pattern, $content, $wraps)) {
+      foreach ($wraps[1] as $escaped) {
+        $summary = self::normalizeSummary(html_entity_decode($escaped, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($summary !== null) {
+          break;
+        }
       }
     }
-
-    $content = preg_replace($pattern, '', $content);
-    $content = preg_replace('/<div class="oai-summary-wrap"[^>]*>\s*<button[^>]*>.*?<\/button>\s*<div class="oai-summary-content"[^>]*>\s*<\/div>\s*<\/div>\s*/s', '', $content);
+    $content = preg_replace($wrap_pattern, '', $content);
 
     return [$summary, $content];
+  }
+
+  private static function normalizeSummary($summary)
+  {
+    // Legacy saves wrapped the markdown in <h3>✨ AI Summary</h3><div class="oai-summary-content">…</div>
+    $summary = preg_replace('/^\s*<h3[^>]*>\s*✨ AI Summary\s*<\/h3>\s*/u', '', $summary);
+    if (preg_match('/^\s*<div class="oai-summary-content"[^>]*>(.*)<\/div>\s*$/s', $summary, $inner)) {
+      $summary = $inner[1];
+    }
+    $summary = trim(str_replace('--&gt;', '-->', $summary));
+    return $summary === '' ? null : $summary;
   }
 
   /** Build the content to persist: bare summary markers at the top, then the untouched article content. */
@@ -424,15 +445,15 @@ class ArticleSummaryExtension extends Minz_Extension
   public function handleConfigureAction()
   {
     if (Minz_Request::isPost()) {
-      FreshRSS_Context::$user_conf->oai_url = Minz_Request::param('oai_url', '');
-      FreshRSS_Context::$user_conf->oai_key = Minz_Request::param('oai_key', '');
-      FreshRSS_Context::$user_conf->oai_model = Minz_Request::param('oai_model', '');
-      FreshRSS_Context::$user_conf->oai_prompt = Minz_Request::param('oai_prompt', '');
-      FreshRSS_Context::$user_conf->oai_provider = Minz_Request::param('oai_provider', '');
-      FreshRSS_Context::$user_conf->oai_max_tokens = Minz_Request::param('oai_max_tokens', '4096');
-      FreshRSS_Context::$user_conf->oai_auto_enabled = Minz_Request::param('oai_auto_enabled', '');
-      FreshRSS_Context::$user_conf->oai_auto_min_time = Minz_Request::param('oai_auto_min_time', '5');
-      FreshRSS_Context::$user_conf->oai_auto_feeds = Minz_Request::param('oai_auto_feeds', '');
+      FreshRSS_Context::$user_conf->oai_url = Minz_Request::paramString('oai_url');
+      FreshRSS_Context::$user_conf->oai_key = Minz_Request::paramString('oai_key');
+      FreshRSS_Context::$user_conf->oai_model = Minz_Request::paramString('oai_model');
+      FreshRSS_Context::$user_conf->oai_prompt = Minz_Request::paramString('oai_prompt');
+      FreshRSS_Context::$user_conf->oai_provider = Minz_Request::paramString('oai_provider');
+      FreshRSS_Context::$user_conf->oai_max_tokens = Minz_Request::paramString('oai_max_tokens') ?: '4096';
+      FreshRSS_Context::$user_conf->oai_auto_enabled = Minz_Request::paramString('oai_auto_enabled');
+      FreshRSS_Context::$user_conf->oai_auto_min_time = Minz_Request::paramString('oai_auto_min_time') ?: '5';
+      FreshRSS_Context::$user_conf->oai_auto_feeds = Minz_Request::paramString('oai_auto_feeds');
       FreshRSS_Context::$user_conf->save();
     }
   }

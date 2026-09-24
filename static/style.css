@@ -1,43 +1,55 @@
-/* Summary widget styling */
+/* Summary widget styling: relies on FreshRSS's own CSS variables so it follows the active theme. */
 .oai-summary-wrap {
   display: block;
   margin: 0 0 1rem;
-  padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 10px;
-  background: #5d5d5d;
-  color: #fff;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--frss-background-color, #fff) 55%, #5b93ba);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--frss-background-color, #fff) 70%, #6f9eb9);
+  color: inherit;
 }
 
 .oai-summary-btn {
   display: inline-block;
-  min-height: 32px;
-  margin: 0 0 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  background: #4a4a4a;
-  color: #fff;
-  font-size: 1rem;
-  line-height: 1.4;
-  cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  margin: 0 0 0.6rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--frss-background-color, #fff) 45%, #7caecc);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--frss-background-color, #fff) 55%, #5b93ba);
+  color: inherit;
+  font-size: 1em;
+  line-height: 1.5;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .oai-summary-btn:hover:not(:disabled) {
-  background: #5a5a5a;
+  border-color: #9ac8e2;
+  background: color-mix(in srgb, var(--frss-background-color, #fff) 35%, #6fa7ca);
 }
 
 .oai-summary-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .oai-summary-content {
   display: block;
   margin-top: 0.35rem;
-  font-size: 0.95em;
-  line-height: 1.35;
+  color: inherit;
+}
+
+.oai-summary-content.oai-error {
+  color: #9da9b1 !important;
+}
+
+.oai-summary-content.oai-loading {
+  color: #9da9b1 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .oai-summary-wrap {
+    border-color: #455866;
+    background: #1E1E1E;
+  }
 }
 
 .oai-summary-block {
@@ -47,13 +59,14 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #fff;
+  color: inherit;
 }
 
 .oai-summary-header {
   margin: 0 0 0.35rem;
-  font-size: 1.1em;
+  font-size: 1.05em;
   line-height: 1.2;
+  color: inherit;
 }
 
 .oai-summary-content > :first-child,
@@ -82,6 +95,33 @@
 .oai-summary-content div {
   margin: 0.3em 0;
   padding: 0;
+}
+
+.oai-summary-content code {
+  font-family: monospace;
+  font-size: 0.95em;
+  padding: 0.08em 0.28em;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 3px;
+  background: rgb(255 255 255 / 4%) !important;
+  color: color-mix(in srgb, currentColor 72%, var(--frss-background-color, #fff)) !important;
+}
+
+.oai-summary-content blockquote {
+  margin: 0.3em 0;
+  padding: 0.25em 0.6em;
+  border-left: 2px solid rgb(255 255 255 / 15%);
+  border-radius: 0 4px 4px 0;
+  background: rgb(255 255 255 / 3%);
+  color: color-mix(in srgb, currentColor 72%, var(--frss-background-color, #fff)) !important;
+}
+
+.oai-summary-wrap br,
+.oai-summary-content br {
+  display: block;
+  content: "";
+  margin: 0;
+  line-height: 0.5;
 }
 
 .oai-summary-content ul,
