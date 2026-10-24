@@ -8,12 +8,7 @@ class ArticleSummaryExtension extends Minz_Extension
   // protected array $csp_policies = [
   //   'default-src' => '*',
   // ];
-  $parts = parse_url(FreshRSS_Context::$user_conf->oai_url ?? '');
-  if (!empty($parts['scheme']) && !empty($parts['host'])) {
-    $origin = $parts['scheme'] . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
-    $this->csp_policies = ['connect-src' => "'self' " . $origin];
-  }
-
+  
   public function init()
   {
     $this->registerHook('entry_before_display', array($this, 'addSummaryButtons'));
@@ -23,6 +18,12 @@ class ArticleSummaryExtension extends Minz_Extension
     Minz_View::appendScript($this->getFileUrl('axios.js', 'js'));
     Minz_View::appendScript($this->getFileUrl('marked.js', 'js'));
     Minz_View::appendScript($this->getFileUrl('script.js', 'js'));
+
+    $parts = parse_url(FreshRSS_Context::$user_conf->oai_url ?? '');
+    if (!empty($parts['scheme']) && !empty($parts['host'])) {
+      $origin = $parts['scheme'] . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
+      $this->csp_policies = ['connect-src' => "'self' " . $origin];
+    }
   }
 
   public function addSummaryButtons($entry)
