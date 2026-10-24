@@ -4,9 +4,15 @@ class ArticleSummaryExtension extends Minz_Extension
   const SUMMARY_START = '<!-- AI_SUMMARY_START -->';
   const SUMMARY_END = '<!-- AI_SUMMARY_END -->';
 
-  protected array $csp_policies = [
-    'default-src' => '*',
-  ];
+  // Trigger warning: The CSP header in use is unsafe and FreshRSS may be vulnerable to XSS attacks.
+  // protected array $csp_policies = [
+  //   'default-src' => '*',
+  // ];
+  $parts = parse_url(FreshRSS_Context::$user_conf->oai_url ?? '');
+  if (!empty($parts['scheme']) && !empty($parts['host'])) {
+    $origin = $parts['scheme'] . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
+    $this->csp_policies = ['connect-src' => "'self' " . $origin];
+  }
 
   public function init()
   {
